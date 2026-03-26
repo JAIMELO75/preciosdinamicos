@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Slot Machine | Jaime Loaiza</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-green: #00ff88;
+            --neon-red: #ff3e3e;
+            --neon-gold: #ffcc00;
+            --panel-bg: #1a1f25;
+            --dark-bg: #0f1216;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--dark-bg);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .machine-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header {
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* --- INPUT PANEL --- */
+        .input-panel {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid #2d353f;
+            margin-bottom: 30px;
+        }
+
+        .field { display: flex; flex-direction: column; gap: 8px; }
+        .field label { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
+        .input {
+            background: #000;
+            border: 1px solid #444;
+            color: var(--neon-green);
+            padding: 12px;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            text-align: center;
+            outline: none;
+        }
+
+        /* --- THE SLOT MACHINE --- */
+        .slots-window {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            background: #222;
+            padding: 15px;
+            border-radius: 25px;
+            border: 8px solid #333;
+            box-shadow: inset 0 0 50px #000;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Línea de selección central */
+        .selection-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            transform: translateY(-50%);
+            background: rgba(255, 204, 0, 0.1);
+            border-top: 2px solid var(--neon-gold);
+            border-bottom: 2px solid var(--neon-gold);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .reel {
+            position: relative;
+            height: 100%;
+            overflow-y: scroll;
+            scrollbar-width: none; /* Firefox */
+            scroll-snap-type: y mandatory;
+            background: linear-gradient(180deg, #111 0%, #222 50%, #111 100%);
+            border-radius: 10px;
+        }
+        .reel::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+        .strip { display: flex; flex-direction: column; }
+
+        .slot-item {
+            height: 270px; /* Ajuste para centrar */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            scroll-snap-align: center;
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            transition: all 0.3s;
+        }
+
+        .slot-item.active { filter: brightness(1.2); transform: scale(1.05); }
+
+        .val { font-family: 'Orbitron', sans-serif; font-size: 20px; margin-bottom: 5px; }
+        .lbl { font-size: 9px; text-transform: uppercase; opacity: 0.6; }
+
+        /* Colores de Esfuerzo */
+        .effort-organico { color: var(--neon-green); }
+        .effort-tactico { color: var(--neon-gold); }
+        .effort-estructural { color: var(--neon-red); }
+
+        @media (max-width: 768px) {
+            .input-panel { grid-template-columns: 1fr; }
+            .slots-window { grid-template-columns: repeat(3, 1fr); height: 200px; }
+            .reel:nth-child(4), .reel:nth-child(5) { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="machine-container">
+    <div class="header">
+        <h1>PRICING SLOT MACHINE</h1>
+        <p style="color: var(--neon-gold)">JAIME LOAIZA CONSULTING</p>
+    </div>
+
+    <div class="input-panel">
+        <div class="field"><label>Precio Base</label><input type="number" id="pAct" class="input" value="10.08"></div>
+        <div class="field"><label>Margen Actual %</label><input type="number" id="mAct" class="input" value="25"></div>
+        <div class="field"><label>Unidades Año</label><input type="number" id="qAct" class="input" value="1440"></div>
+    </div>
+
+    <div class="slots-window">
+        <div class="selection-line"></div>
+        
+        <div class="reel" id="reelDesc"></div>
+        
+        <div class="reel" id="reelPrecio"></div>
+
+        <div class="reel" id="reelMargen"></div>
+
+        <div class="reel" id="reelMeta"></div>
+
+        <div class="reel" id="reelEffort"></div>
+    </div>
+
+    <p style="margin-top: 20px; color: var(--muted); font-size: 13px;">
+        Desliza los tambores para ver el impacto de la indiferencia de precio.
+    </p>
+</div>
+
+<script>
+    const reels = {
+        desc: document.getElementById('reelDesc'),
+        precio: document.getElementById('reelPrecio'),
+        margen: document.getElementById('reelMargen'),
+        meta: document.getElementById('reelMeta'),
+        effort: document.getElementById('reelEffort')
+    };
+
+    function calculate() {
+        const pAct = parseFloat(document.getElementById('pAct').value);
+        const mAct = parseFloat(document.getElementById('mAct').value) / 100;
+        const qAct = parseFloat(document.getElementById('qAct').value);
+        const costo = pAct * (1 - mAct);
+        const utilidadObj = qAct * (pAct - costo);
+
+        // Limpiar reels
+        Object.values(reels).forEach(r => r.innerHTML = '');
+
+        // Generar 15 niveles de descuento
+        for (let i = 1; i <= 15; i++) {
+            const pNew = pAct * (1 - i / 100);
+            const mNew = ((pNew - costo) / pNew) * 100;
+            const qNec = pNew > costo ? utilidadObj / (pNew - costo) : 0;
+            const varVol = ((qNec / qAct) - 1) * 100;
+
+            let effort = "Orgánico";
+            let colorClass = "effort-organico";
+            if (varVol > 25) { effort = "Estructural"; colorClass = "effort-estructural"; }
+            else if (varVol > 10) { effort = "Táctico"; colorClass = "effort-tactico"; }
+
+            // Agregar a los reels
+            appendItem(reels.desc, `${i}%`, 'Descuento');
+            appendItem(reels.precio, `$${pNew.toFixed(2)}`, 'Precio');
+            appendItem(reels.margen, `${mNew.toFixed(1)}%`, 'Margen');
+            appendItem(reels.meta, Math.round(qNec).toLocaleString(), 'Meta Uns');
+            appendItem(reels.effort, effort, 'Esfuerzo', colorClass);
+        }
+    }
+
+    function appendItem(reel, val, lbl, colorClass = '') {
+        const div = document.createElement('div');
+        div.className = `slot-item ${colorClass}`;
+        div.innerHTML = `<div class="val">${val}</div><div class="lbl">${lbl}</div>`;
+        reel.appendChild(div);
+    }
+
+    // Sincronizar scroll de todos los reels
+    let isScrolling = false;
+    Object.values(reels).forEach(reel => {
+        reel.onscroll = () => {
+            if (!isScrolling) {
+                isScrolling = true;
+                const scrollPos = reel.scrollTop;
+                Object.values(reels).forEach(r => { if (r !== reel) r.scrollTop = scrollPos; });
+                setTimeout(() => { isScrolling = false; }, 10);
+            }
+        };
+    });
+
+    // Escuchar cambios en inputs
+    ['pAct', 'mAct', 'qAct'].forEach(id => {
+        document.getElementById(id).oninput = calculate;
+    });
+
+    calculate();
+</script>
+
+</body>
+</html>
